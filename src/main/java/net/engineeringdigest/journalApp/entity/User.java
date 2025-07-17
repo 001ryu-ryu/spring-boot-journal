@@ -26,5 +26,5 @@ public class User {
     private String password;
     @DBRef
     private List<JournalEntry> journalEntries = new ArrayList<>(); // by doing new ArrayList, whenever a new user initialize, an empty list will be created, not null
-
+    private List<String> roles;
 }

@@ -23,6 +23,7 @@ public class JournalEntryService {
     @Autowired
     private UserService userService;
 
+
     @Transactional
     // if any exception occurs in mid-way of executing this fun, any changes made before the error, will be rolled back
     public void saveEntry(JournalEntry journalEntry, String userName) {
@@ -31,9 +32,8 @@ public class JournalEntryService {
             journalEntry.setDate(LocalDateTime.now());
             JournalEntry saved = journalEntryRepository.save(journalEntry);
             user.getJournalEntries().add(saved);
-            userService.saveEntry(user);
+            userService.saveUser(user);
         } catch (Exception e) {
-            log.error("Exception: ", e);
             throw new RuntimeException("An error occurred while saving the entry!", e);
         }
 
@@ -44,7 +44,6 @@ public class JournalEntryService {
     }
 
 
-
     public List<JournalEntry> getAll() {
         return journalEntryRepository.findAll();
     }
@@ -53,10 +52,21 @@ public class JournalEntryService {
         return journalEntryRepository.findById(id);
     }
 
-    public void deleteById(ObjectId id, String userName) {
-        User user = userService.findByUserName(userName);
-        user.getJournalEntries().removeIf(x -> x.getId().equals(id));
-        userService.saveEntry(user);
-        journalEntryRepository.deleteById(id);
+    @Transactional
+    public boolean deleteById(ObjectId id, String userName) {
+
+        boolean removed = false;
+        try {
+            User user = userService.findByUserName(userName);
+            removed = user.getJournalEntries().removeIf(x -> x.getId().equals(id));
+            if (removed) {
+                userService.saveUser(user);
+                journalEntryRepository.deleteById(id);
+            }
+        } catch (Exception e) {
+            System.out.println(e);
+            throw new RuntimeException("An error occurred", e);
+        }
+        return removed;
     }
 }
